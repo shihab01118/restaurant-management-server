@@ -46,6 +46,17 @@ const reviewCollection = database.collection("reviews");
 const cartCollection = database.collection("cart");
 
 // Cart Collection
+app.get("/api/v1/user/cart", async (req, res) => {
+  try {
+    const userEmail = req.query.email;
+    const query = { email: userEmail };
+    const result = await cartCollection.find(query).toArray();
+    res.send(result);
+  } catch (error) {
+    res.send(error.message);
+  }
+});
+
 app.post("/api/v1/user/cart", async (req, res) => {
   try {
     const cartItem = req.body;
