@@ -43,24 +43,38 @@ run().catch(console.dir);
 const database = client.db("bistroDB");
 const menuCollection = database.collection("menus");
 const reviewCollection = database.collection("reviews");
+const cartCollection = database.collection("cart");
 
-app.get("/api/v1/user/menus", async(req, res) => {
-    try {
-        const result = await menuCollection.find().toArray();
-        res.send(result);
-    } catch (error) {
-        res.send(error.message)
-    }
-})
+// Cart Collection
+app.post("/api/v1/user/cart", async (req, res) => {
+  try {
+    const cartItem = req.body;
+    const result = await cartCollection.insertOne(cartItem);
+    res.send(result);
+  } catch (error) {
+    res.send(error.message);
+  }
+});
 
-app.get("/api/v1/user/reviews", async(req, res) => {
-    try {
-        const result = await reviewCollection.find().toArray();
-        res.send(result);
-    } catch (error) {
-        res.send(error.message)
-    }
-})
+// Menu Collection
+app.get("/api/v1/user/menus", async (req, res) => {
+  try {
+    const result = await menuCollection.find().toArray();
+    res.send(result);
+  } catch (error) {
+    res.send(error.message);
+  }
+});
+
+// Review Collection
+app.get("/api/v1/user/reviews", async (req, res) => {
+  try {
+    const result = await reviewCollection.find().toArray();
+    res.send(result);
+  } catch (error) {
+    res.send(error.message);
+  }
+});
 
 app.get("/", (req, res) => {
   res.send("Boss is running to restaurant");
