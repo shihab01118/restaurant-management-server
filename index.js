@@ -58,7 +58,7 @@ app.post("/api/v1/auth/jwt", async (req, res) => {
 
 // middlewares
 const verifyToken = (req, res, next) => {
-  console.log("inside verifytoken", req.headers.authorization);
+  // console.log("inside verifytoken", req.headers.authorization);
   if (!req.headers.authorization) {
     return res.status(401).send({ message: "unAuthorized access" });
   }
@@ -67,18 +67,52 @@ const verifyToken = (req, res, next) => {
     if (err) {
       return res.status(401).send({ message: "unAuthorized access" });
     }
-    req.user = decoded;
+    req.decoded = decoded;
+    // console.log(decoded);
     next();
   });
 };
 
+// use verifyAdmin after verifyToken
+const verifyAdmin = async (req, res, next) => {
+  const decodedEmail = req.decoded.email;
+  const query = { email: decodedEmail };
+  const user = await userCollection.findOne(query);
+  const isAdmin = user?.role === "admin";
+  if (!isAdmin) {
+    return res.status(403).send({ message: "forbidden access" });
+  }
+  next();
+};
+
 // User Collection
-app.get("/api/v1/users", verifyToken, async (req, res) => {
+app.get("/api/v1/users", verifyToken, verifyAdmin, async (req, res) => {
   try {
     console.log(req.headers);
     const result = await userCollection.find().toArray();
     res.send(result);
   } catch (error) {
+    res.send(error.message);
+  }
+});
+
+app.get("/api/v1/users/admin/:email", verifyToken, async (req, res) => {
+  try {
+    const userEmail = req.params.email;
+    const decodedEmail = req.decoded.email;
+    // console.log(userEmail, decodedEmail);
+    if (userEmail !== decodedEmail) {
+      return res.status(403).send({ message: "forbidden user" });
+    }
+    const query = { email: userEmail };
+    const user = await userCollection.findOne(query);
+    let admin = false;
+    if (user) {
+      admin = user.role === "admin";
+    }
+    res.send({ admin });
+  } catch (error) {
+    console.log(error);
     res.send(error.message);
   }
 });
@@ -101,7 +135,7 @@ app.post("/api/v1/users", async (req, res) => {
   }
 });
 
-app.patch("/api/v1/users/admin/:id", async (req, res) => {
+app.patch("/api/v1/users/admin/:id", verifyToken, verifyAdmin, async (req, res) => {
   try {
     const id = req.params.id;
     const filter = { _id: new ObjectId(id) };
@@ -117,7 +151,7 @@ app.patch("/api/v1/users/admin/:id", async (req, res) => {
   }
 });
 
-app.delete("/api/v1/users/:id", async (req, res) => {
+app.delete("/api/v1/users/:id", verifyToken, verifyAdmin, async (req, res) => {
   try {
     const id = req.params.id;
     const query = { _id: new ObjectId(id) };
