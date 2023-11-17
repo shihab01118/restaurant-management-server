@@ -210,6 +210,17 @@ app.get("/api/v1/user/menus", async (req, res) => {
   }
 });
 
+app.get("/api/v1/user/menus/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+    const query = { _id: new ObjectId(id) };
+    const result = await menuCollection.findOne(query);
+    res.send(result);
+  } catch (error) {
+    res.send(error.message);
+  }
+});
+
 app.post("/api/v1/admin/menus", verifyToken, verifyAdmin, async (req, res) => {
   try {
     const item = req.body;
@@ -220,16 +231,41 @@ app.post("/api/v1/admin/menus", verifyToken, verifyAdmin, async (req, res) => {
   }
 });
 
+app.patch(
+  "/api/v1/admin/menus/:id",
+  verifyToken,
+  verifyAdmin,
+  async (req, res) => {
+    try {
+      const item = req.body;
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updatedMenu = {
+        $set: {
+          name: item?.name,
+          price: item?.price,
+          category: item?.category,
+          recipe: item?.recipe,
+        },
+      };
+      const result = await menuCollection.updateOne(filter, updatedMenu);
+      res.send(result);
+    } catch (error) {
+      res.send(error.message);
+    }
+  }
+);
+
 app.delete("/api/v1/admin/menus/:id", async (req, res) => {
   try {
     const id = req.params.id;
-    const query = {_id: new ObjectId(id)};
+    const query = { _id: new ObjectId(id) };
     const result = await menuCollection.deleteOne(query);
     res.send(result);
   } catch (error) {
-    res.send(error.message)
+    res.send(error.message);
   }
-})
+});
 
 // Review Collection
 app.get("/api/v1/user/reviews", async (req, res) => {
