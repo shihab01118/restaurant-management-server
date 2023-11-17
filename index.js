@@ -220,6 +220,17 @@ app.post("/api/v1/admin/menus", verifyToken, verifyAdmin, async (req, res) => {
   }
 });
 
+app.delete("/api/v1/admin/menus/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+    const query = {_id: new ObjectId(id)};
+    const result = await menuCollection.deleteOne(query);
+    res.send(result);
+  } catch (error) {
+    res.send(error.message)
+  }
+})
+
 // Review Collection
 app.get("/api/v1/user/reviews", async (req, res) => {
   try {
