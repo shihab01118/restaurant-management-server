@@ -135,21 +135,26 @@ app.post("/api/v1/users", async (req, res) => {
   }
 });
 
-app.patch("/api/v1/users/admin/:id", verifyToken, verifyAdmin, async (req, res) => {
-  try {
-    const id = req.params.id;
-    const filter = { _id: new ObjectId(id) };
-    const updatedDoc = {
-      $set: {
-        role: "admin",
-      },
-    };
-    const result = await userCollection.updateOne(filter, updatedDoc);
-    res.send(result);
-  } catch (error) {
-    res.send(error.message);
+app.patch(
+  "/api/v1/users/admin/:id",
+  verifyToken,
+  verifyAdmin,
+  async (req, res) => {
+    try {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updatedDoc = {
+        $set: {
+          role: "admin",
+        },
+      };
+      const result = await userCollection.updateOne(filter, updatedDoc);
+      res.send(result);
+    } catch (error) {
+      res.send(error.message);
+    }
   }
-});
+);
 
 app.delete("/api/v1/users/:id", verifyToken, verifyAdmin, async (req, res) => {
   try {
@@ -199,6 +204,16 @@ app.delete("/api/v1/user/cart/:id", async (req, res) => {
 app.get("/api/v1/user/menus", async (req, res) => {
   try {
     const result = await menuCollection.find().toArray();
+    res.send(result);
+  } catch (error) {
+    res.send(error.message);
+  }
+});
+
+app.post("/api/v1/admin/menus", verifyToken, verifyAdmin, async (req, res) => {
+  try {
+    const item = req.body;
+    const result = await menuCollection.insertOne(item);
     res.send(result);
   } catch (error) {
     res.send(error.message);
