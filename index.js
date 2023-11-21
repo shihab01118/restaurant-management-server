@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 
 const app = express();
@@ -46,6 +47,7 @@ const menuCollection = database.collection("menus");
 const reviewCollection = database.collection("reviews");
 const cartCollection = database.collection("cart");
 const userCollection = database.collection("users");
+const paymentCollection = database.collection("payments");
 
 // Auth Related api's
 app.post("/api/v1/auth/jwt", async (req, res) => {
@@ -265,6 +267,49 @@ app.delete("/api/v1/admin/menus/:id", async (req, res) => {
   } catch (error) {
     res.send(error.message);
   }
+});
+
+// Payment related api's
+app.get("/api/v1/user/payment/:email", verifyToken, async (req, res) => {
+  const userEmail = req.params.email;
+  const query = {email: userEmail};
+  if (userEmail !== req.decoded.email) {
+    return res.status(403).send({ message: "forbidden user" });
+  }
+  const result = await paymentCollection.find(query).toArray();
+  res.send(result);
+})
+
+app.post("/api/v1/user/create-payment-intent", async (req, res) => {
+  try {
+    const { price } = req.body;
+    const amount = parseInt(price * 100);
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: amount,
+      currency: "usd",
+      payment_method_types: ["card"],
+    });
+    res.send({
+      clientSecret: paymentIntent.client_secret,
+    });
+  } catch (error) {
+    res.send(error.message);
+  }
+});
+
+app.post("/api/v1/user/payment", async (req, res) => {
+  const payment = req.body;
+  const paymentResult = await paymentCollection.insertOne(payment);
+  // console.log("payment Info", payment);
+
+  const query = {
+    _id: {
+      $in: payment.cartId.map((id) => new ObjectId(id)),
+    },
+  };
+  const deleteResult = await cartCollection.deleteMany(query);
+
+  res.send(deleteResult);
 });
 
 // Review Collection
